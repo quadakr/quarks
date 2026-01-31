@@ -1,5 +1,5 @@
 # quarks
-Simple cli tool for white noise real-time generation depended on user actions.
+Simple **Linux Only** cli tool for white noise real-time generation depended on user actions.
 
 # What's "cool"?
 Using libinput, this script smoothly increase noise frequency when typing speed increases. (or simply, when you fastly press keyboard buttons)
