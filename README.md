@@ -1,7 +1,7 @@
 # quarks
 Simple **Linux Only** cli tool for [white] noise real-time generation with volume/frequency depended on user actions.
 
-# What's "cool"?
+# What's "cool"? (Feautures)
 Using libinput, this script smoothly increase noise frequency when typing/mouse movement speed increases, creating feedback effect.
 
 # Early Developement
