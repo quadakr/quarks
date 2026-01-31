@@ -9,3 +9,4 @@ Code is not clear yet, behaviour may change during project enhancement.
 
 # How to set up
 Install python3, libinput, numpy (python library), sounddevice (python library too), and it would work on your machine.
+Note: your user must be in "input" group.
