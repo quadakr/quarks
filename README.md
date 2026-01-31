@@ -1,12 +1,23 @@
 # quarks
-Simple **Linux Only** cli tool for [white] noise real-time generation with volume/frequency depended on user actions.
 
-# What's "cool"? (Feautures)
-Using libinput, this script smoothly increase noise frequency when typing/mouse movement speed increases, creating feedback effect.
+Simple **Linux Only** CLI tool for real-time adaptive [white] noise generation.
+Volume and frequency dynamically respond to keyboard and mouse activity.
 
-# Early Developement
-Behaviour may change during project enhancement.
+## Status
+Early development. Behavior may change.
 
-# How to set up
-Install python3, libinput, numpy (python library), sounddevice (python library too), and it would work on your machine.
-Note: your user must be in "input" group.
+## Features
+- Real-time white noise synthesis and output
+- Activity-responsive frequency (typing/mouse speed increases pitch)
+- Uses libinput for hardware event monitoring
+- Smooth audio transitions (low-pass filtering)
+
+## Requirements
+- Linux with libinput
+- Python 3
+- User must be in `input` group (`sudo usermod -a -G input $USER`)
+- Python packages: numpy, sounddevice
+
+## Usage
+```bash
+python quark-sounds.py
