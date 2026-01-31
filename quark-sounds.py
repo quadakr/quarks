@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import readline
@@ -53,7 +54,7 @@ def keyboard_activity_watcher():
             line = proc.stdout.readline()
             if not line:
                 break
-            if "KEYBOARD_KEY" in line and "pressed" in line:
+            if "KEYBOARD_KEY" in line:
                 key_events.append(time.time())
 
         now = time.time()
@@ -76,6 +77,56 @@ def keyboard_activity_watcher():
             last_output_update = now
 
 
+def mouse_activity_watcher():
+    global mouse_rate
+
+    proc = subprocess.Popen(
+        ["libinput", "debug-events"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        bufsize=1,
+    )
+
+    mouse_events = []
+    smoothed_rate = 0
+    alpha = 0.02  # smoothing
+
+    window_size = 2.0
+    output_interval = 1.0 / 60.0
+
+    last_output_update = time.time()
+
+    while True:
+        timeout = max(0.001, output_interval - (time.time() - last_output_update))
+        ready, _, _ = select.select([proc.stdout], [], [], timeout)
+        if ready:
+            line = proc.stdout.readline()
+            if not line:
+                break
+            if "POINTER_MOTION" or "POINTER_SCROLL_WHEEL" or "POINTER_BUTTON" in line:
+                mouse_events.append(time.time())
+
+        now = time.time()
+
+        if now - last_output_update >= output_interval:
+            cutoff_time = now - window_size
+            mouse_events = [t for t in mouse_events if t > cutoff_time]
+            if len(mouse_events) > 1:
+                if mouse_events:
+                    time_span = (
+                        now - mouse_events[0] if len(mouse_events) > 1 else window_size
+                    )
+                    instant_rate = len(mouse_events) / min(time_span, window_size)
+                else:
+                    instant_rate = 0
+            else:
+                instant_rate = 0
+            smoothed_rate = alpha * instant_rate + (1 - alpha) * smoothed_rate
+            mouse_rate = smoothed_rate
+            last_output_update = now
+
+
 def callback(outdata, frames, time_info, status):
     global sound_alpha, target_alpha, prev, cpu_temp, key_rate
 
@@ -83,6 +134,9 @@ def callback(outdata, frames, time_info, status):
 
     if key_rate_affects:
         sound_alpha = ((sound_alpha) + ((key_rate + 6) / 2000)) / 8
+
+    if mouse_rate_affects:
+        sound_alpha = ((sound_alpha * 10) + ((mouse_rate + 6) / 20000)) / 8
 
     if cpu_affects:
         sound_alpha = sound_alpha + (cpu_temp + 1) / 20000
@@ -102,7 +156,7 @@ def callback(outdata, frames, time_info, status):
 def main():
     try:
         continue_program = input(
-            f"Disclaimer: This program is n early developement stage, theoretically, it can hurt your audio device, or ears. Sure want to continue?[y/n]: "
+            f"Disclaimer: This program is in early developement stage, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
         )
 
         if continue_program != "y":
@@ -117,6 +171,10 @@ def main():
         cpu_temp = 40.0
         global key_rate_affects
         key_rate_affects = True
+        global mouse_rate_affects
+        mouse_rate_affects = True
+        global mouse_rate
+        mouse_rate = 0.0
         global key_rate
         key_rate = 0.0
         global sound_alpha
@@ -124,7 +182,9 @@ def main():
 
         threading.Thread(target=keyboard_activity_watcher, daemon=True).start()
 
-        threading.Thread(target=cpu_temp_watcher, daemon=True).start()
+        threading.Thread(target=mouse_activity_watcher, daemon=True).start()
+
+        # threading.Thread(target=cpu_temp_watcher, daemon=True).start()
 
         with sd.OutputStream(
             samplerate=SAMPLERATE,
@@ -134,6 +194,7 @@ def main():
         ):
             while True:
                 time.sleep(1)
+                print(mouse_rate)
 
     except KeyboardInterrupt:
         print("\n\nExited quark-sounds.\n")
@@ -141,3 +202,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
