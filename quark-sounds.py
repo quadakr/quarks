@@ -40,7 +40,7 @@ def keyboard_activity_watcher():
 
     key_events = []
     smoothed_rate = 0
-    alpha = 0.02  # smoothing
+    alpha = 0.01  # smoothing
 
     window_size = 2.0
     output_interval = 1.0 / 60.0
@@ -90,7 +90,7 @@ def mouse_activity_watcher():
 
     mouse_events = []
     smoothed_rate = 0
-    alpha = 0.02  # smoothing
+    alpha = 0.01  # smoothing
 
     window_size = 2.0
     output_interval = 1.0 / 60.0
@@ -128,15 +128,19 @@ def mouse_activity_watcher():
 
 
 def callback(outdata, frames, time_info, status):
-    global sound_alpha, target_alpha, prev, cpu_temp, key_rate
+    global sound_alpha, target_alpha, prev, cpu_temp, key_rate, sensitivity, base_sound
 
     init_sounds_alpha = sound_alpha * 15
 
     if key_rate_affects:
-        sound_alpha = ((sound_alpha) + ((key_rate + 6) / 2000)) / 8
+        sound_alpha = (
+            (sound_alpha) + base_sound + ((key_rate + 0) / (3000 / sensitivity))
+        ) / 8
 
     if mouse_rate_affects:
-        sound_alpha = ((sound_alpha * 10) + ((mouse_rate + 6) / 20000)) / 8
+        sound_alpha = (
+            (sound_alpha * 10) + base_sound + ((mouse_rate + 0) / (15000 / sensitivity))
+        ) / 8
 
     if cpu_affects:
         sound_alpha = sound_alpha + (cpu_temp + 1) / 20000
@@ -162,6 +166,40 @@ def main():
         if continue_program != "y":
             print("\n\nExited quark-sounds.\n")
             sys.exit(0)
+
+        global sensitivity
+        sensitivity = 6
+
+        try:
+            sensitivity_assing = int(
+                input(f"Sensitivity to user actions (0 - 100, 2 recommended):")
+            )
+        except ValueError:
+            print("Wtire an int number please. (ex: 12, not 12.5)")
+            sys.exit(1)
+
+        if sensitivity_assing > 100 or sensitivity_assing < 0:
+            print("\n\nThis configuration is unsave.\n")
+            sys.exit(1)
+
+        sensitivity = sensitivity_assing / 20
+
+        global base_sound
+        base_sound = 6
+
+        try:
+            base_sound_assing = int(
+                input(f"Base sound loudness (0 - 100, 3 recommended):")
+            )
+        except ValueError:
+            print("Wtire an int number please. (ex: 12, not 12.5)")
+            sys.exit(1)
+
+        if base_sound_assing > 100 or base_sound_assing < 0:
+            print("\n\nThis configuration is unsave.\n")
+            sys.exit(1)
+
+        base_sound = base_sound_assing / 20000
 
         global prev
         prev = np.zeros(CHANNELS)
@@ -192,12 +230,24 @@ def main():
             channels=CHANNELS,
             callback=callback,
         ):
+            print("", end="\n\n")
             while True:
-                time.sleep(1)
-                print(mouse_rate)
+                key_rate = round(key_rate, 1)
+                mouse_rate = round(mouse_rate, 1)
+                sys.stdout.write("\033[2K\r")  # стираем и возвращаемся в начало
+                sys.stdout.write(
+                    "Mouse activity: "
+                    + str(mouse_rate)
+                    + " | "
+                    + "Keyboard activity: "
+                    + str(key_rate)
+                )
+                sys.stdout.flush()  # сбрасываем буфер!
+                time.sleep(0.2)  # спим ПОСЛЕ вывода
 
     except KeyboardInterrupt:
         print("\n\nExited quark-sounds.\n")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
