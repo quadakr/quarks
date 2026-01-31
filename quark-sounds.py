@@ -82,7 +82,7 @@ def callback(outdata, frames, time_info, status):
     init_sounds_alpha = sound_alpha * 15
 
     if key_rate_affects:
-        sound_alpha = ((sound_alpha) + ((key_rate + 10) / 2000)) / 8
+        sound_alpha = ((sound_alpha) + ((key_rate + 6) / 2000)) / 8
 
     if cpu_affects:
         sound_alpha = sound_alpha + (cpu_temp + 1) / 20000
