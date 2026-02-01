@@ -18,6 +18,20 @@ In development. Behavior may change.
 - User must be in `input` group (`sudo usermod -a -G input $USER`)
 - Python packages: numpy, sounddevice
 
+## Installing/Updating
+
+Download install.sh, then:
+
+```bash
+cd ~/Downloads/ ; chmod +x install.sh ; sudo ./install.sh
+```
+
+Or just with one command:
+```bash
+curl -fsSL https://raw.githubusercontent.com/quadakr/quarks/main/install.sh | bash
+```
+---
+
 ## Usage
 ```bash
 python quark-sounds.py
