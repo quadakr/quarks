@@ -149,7 +149,6 @@ def callback(outdata, frames, time_info, status):
     out = np.empty_like(noise)
 
     for i in range(frames):
-        # prev += (init_sounds_alpha * 50 + sound_alpha / 100) * (noise[i] - prev)
         prev += (init_sounds_alpha * 1 + sound_alpha / 5) * (noise[i] - prev)
 
         out[i] = prev
@@ -172,7 +171,7 @@ def main():
 
         try:
             sensitivity_assing = int(
-                input(f"Sensitivity to user actions (0 - 100, 2 recommended):")
+                input(f"Sensitivity to user actions (0 - 100, 10 recommended):")
             )
         except ValueError:
             print("Wtire an int number please. (ex: 12, not 12.5)")
@@ -189,7 +188,7 @@ def main():
 
         try:
             base_sound_assing = int(
-                input(f"Base sound loudness (0 - 100, 3 recommended):")
+                input(f"Base sound loudness (0 - 100, 20 recommended):")
             )
         except ValueError:
             print("Wtire an int number please. (ex: 12, not 12.5)")
@@ -218,6 +217,20 @@ def main():
         global sound_alpha
         sound_alpha = 0
 
+        assing_mouse = input(f"Mouse will affect noise?[y/n]: ")
+
+        if assing_mouse == "y":
+            mouse_rate_affects = True
+        else:
+            mouse_rate_affects = False
+
+        assing_keyboard = input(f"Keyboard will affect noise?[y/n]: ")
+
+        if assing_keyboard == "y":
+            key_rate_affects = True
+        else:
+            key_rate_affects = False
+
         threading.Thread(target=keyboard_activity_watcher, daemon=True).start()
 
         threading.Thread(target=mouse_activity_watcher, daemon=True).start()
@@ -236,11 +249,13 @@ def main():
                 mouse_rate = round(mouse_rate, 1)
                 sys.stdout.write("\033[2K\r")  # стираем и возвращаемся в начало
                 sys.stdout.write(
-                    "Mouse activity: "
+                    " | "
+                    + "Mouse activity: "
                     + str(mouse_rate)
                     + " | "
                     + "Keyboard activity: "
                     + str(key_rate)
+                    + " | "
                 )
                 sys.stdout.flush()  # сбрасываем буфер!
                 time.sleep(0.2)  # спим ПОСЛЕ вывода
@@ -252,4 +267,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
