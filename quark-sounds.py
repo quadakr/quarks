@@ -16,6 +16,13 @@ CHANNELS = 2
 BLOCKSIZE = 1024
 
 
+def bar_return(reached, toreach, length):
+    filled = int((reached / toreach) * length)
+    unfilled = length - filled
+    bar = "[" + "=" * filled + "-" * unfilled + "]"
+    return bar
+
+
 def cpu_temp_watcher():
     while True:
         global cpu_temp
@@ -104,7 +111,11 @@ def mouse_activity_watcher():
             line = proc.stdout.readline()
             if not line:
                 break
-            if "POINTER_MOTION" or "POINTER_SCROLL_WHEEL" or "POINTER_BUTTON" in line:
+            elif (
+                "POINTER_MOTION" in line
+                or "POINTER_SCROLL_WHEEL" in line
+                or "POINTER_BUTTON" in line
+            ):
                 mouse_events.append(time.time())
 
         now = time.time()
@@ -128,7 +139,16 @@ def mouse_activity_watcher():
 
 
 def callback(outdata, frames, time_info, status):
-    global sound_alpha, target_alpha, prev, cpu_temp, key_rate, sensitivity, base_sound
+    global \
+        sound_alpha, \
+        target_alpha, \
+        prev, \
+        cpu_temp, \
+        key_rate, \
+        sensitivity, \
+        base_sound, \
+        level, \
+        gain
 
     init_sounds_alpha = sound_alpha * 15
 
@@ -139,7 +159,7 @@ def callback(outdata, frames, time_info, status):
 
     if mouse_rate_affects:
         sound_alpha = (
-            (sound_alpha * 10) + base_sound + ((mouse_rate + 0) / (15000 / sensitivity))
+            (sound_alpha * 10) + base_sound + ((mouse_rate + 0) / (12000 / sensitivity))
         ) / 8
 
     if cpu_affects:
@@ -153,11 +173,17 @@ def callback(outdata, frames, time_info, status):
 
         out[i] = prev
 
-    outdata[:] = out
+    outdata[:] = out * gain
+
+    level = float(np.sqrt(np.mean(out**2)))
 
 
 def main():
     try:
+        global gain
+        gain = 1
+        global level
+        level = 0.01
         global prev
         prev = np.zeros(CHANNELS)
         global cpu_affects
@@ -254,7 +280,10 @@ def main():
                     + "Keyboard activity: "
                     + str(round(key_rate, 1))
                     + " | "
+                    + str(bar_return(level, 0.08, 20))
+                    + " | "
                 )
+
                 sys.stdout.flush()
                 time.sleep(0.1)
 
