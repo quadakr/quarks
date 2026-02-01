@@ -4,7 +4,7 @@ Simple **Linux Only** CLI tool for real-time adaptive [white] noise generation.
 Volume [and frequency] dynamically respond to keyboard and mouse activity.
 
 ## Status
-Early development. Behavior may change.
+In development. Behavior may change.
 
 ## Features
 - Real-time white noise synthesis and output
@@ -21,3 +21,6 @@ Early development. Behavior may change.
 ## Usage
 ```bash
 python quark-sounds.py
+```
+
+<!-- <p> No one will read this line >:3 </p> -->
