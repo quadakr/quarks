@@ -34,7 +34,7 @@ curl -fsSL https://raw.githubusercontent.com/quadakr/quarks/main/install.sh | ba
 
 ## Usage
 ```bash
-python quark-sounds.py
+quarks
 ```
 
 <!-- <p> No one will read this line >:3 </p> -->
