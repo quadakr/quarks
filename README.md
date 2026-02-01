@@ -1,7 +1,7 @@
 # quarks
 
 Simple **Linux Only** CLI tool for real-time adaptive [white] noise generation.
-Volume and frequency dynamically respond to keyboard and mouse activity.
+Volume [and frequency] dynamically respond to keyboard and mouse activity.
 
 ## Status
 Early development. Behavior may change.
