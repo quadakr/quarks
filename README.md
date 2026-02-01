@@ -39,7 +39,7 @@ Or just with one command:
 curl -fsSL https://raw.githubusercontent.com/quadakr/quarks/main/install.sh | bash
 ```
 
-And uninstalling if you want:
+**And uninstalling if you want:**
 ```bash
 rm -rf ~/.local/share/quarks ~/.local/bin/quarks
 ```
