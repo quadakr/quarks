@@ -158,48 +158,6 @@ def callback(outdata, frames, time_info, status):
 
 def main():
     try:
-        continue_program = input(
-            f"Disclaimer: This program is in early developement stage, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
-        )
-
-        if continue_program != "y":
-            print("\n\nExited quark-sounds.\n")
-            sys.exit(0)
-
-        global sensitivity
-        sensitivity = 6
-
-        try:
-            sensitivity_assing = int(
-                input(f"Sensitivity to user actions (0 - 100, 10 recommended):")
-            )
-        except ValueError:
-            print("Wtire an int number please. (ex: 12, not 12.5)")
-            sys.exit(1)
-
-        if sensitivity_assing > 100 or sensitivity_assing < 0:
-            print("\n\nThis configuration is unsave.\n")
-            sys.exit(1)
-
-        sensitivity = sensitivity_assing / 20
-
-        global base_sound
-        base_sound = 6
-
-        try:
-            base_sound_assing = int(
-                input(f"Base sound loudness (0 - 100, 20 recommended):")
-            )
-        except ValueError:
-            print("Wtire an int number please. (ex: 12, not 12.5)")
-            sys.exit(1)
-
-        if base_sound_assing > 100 or base_sound_assing < 0:
-            print("\n\nThis configuration is unsave.\n")
-            sys.exit(1)
-
-        base_sound = base_sound_assing / 20000
-
         global prev
         prev = np.zeros(CHANNELS)
         global cpu_affects
@@ -216,6 +174,48 @@ def main():
         key_rate = 0.0
         global sound_alpha
         sound_alpha = 0
+
+        continue_program = input(
+            f"Disclaimer: This program is in early developement stage, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
+        )
+
+        if continue_program != "y":
+            print("\n\nExited quark-sounds.\n")
+            sys.exit(0)
+
+        global sensitivity
+        sensitivity = 6
+
+        try:
+            sensitivity_assing = int(
+                input(f"Sensitivity to user actions (0 - 100, 10 recommended): ")
+            )
+        except ValueError:
+            print("Wtire an int number please. (ex: 12, not 12.5)")
+            sys.exit(1)
+
+        if sensitivity_assing > 100 or sensitivity_assing < 0:
+            print("\n\nThis configuration is unsave.\n")
+            sys.exit(1)
+
+        sensitivity = sensitivity_assing / 20
+
+        global base_sound
+        base_sound = 6
+
+        try:
+            base_sound_assing = int(
+                input(f"Base sound loudness (0 - 100, 20 recommended): ")
+            )
+        except ValueError:
+            print("Wtire an int number please. (ex: 12, not 12.5)")
+            sys.exit(1)
+
+        if base_sound_assing > 100 or base_sound_assing < 0:
+            print("\n\nThis configuration is unsave.\n")
+            sys.exit(1)
+
+        base_sound = base_sound_assing / 20000
 
         assing_mouse = input(f"Mouse will affect noise?[y/n]: ")
 
@@ -245,20 +245,18 @@ def main():
         ):
             print("", end="\n\n")
             while True:
-                key_rate = round(key_rate, 1)
-                mouse_rate = round(mouse_rate, 1)
-                sys.stdout.write("\033[2K\r")  # стираем и возвращаемся в начало
+                sys.stdout.write("\033[2K\r")
                 sys.stdout.write(
                     " | "
                     + "Mouse activity: "
-                    + str(mouse_rate)
+                    + str(round(mouse_rate, 1))
                     + " | "
                     + "Keyboard activity: "
-                    + str(key_rate)
+                    + str(round(key_rate, 1))
                     + " | "
                 )
-                sys.stdout.flush()  # сбрасываем буфер!
-                time.sleep(0.2)  # спим ПОСЛЕ вывода
+                sys.stdout.flush()
+                time.sleep(0.1)
 
     except KeyboardInterrupt:
         print("\n\nExited quark-sounds.\n")
@@ -267,3 +265,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
