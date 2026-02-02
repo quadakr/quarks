@@ -203,7 +203,7 @@ def main():
         sound_alpha = 0
 
         continue_program = input(
-            f"Disclaimer: This program is still in developement, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
+            f"Disclaimer: This program is still in development, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
         )
 
         if continue_program != "y":
