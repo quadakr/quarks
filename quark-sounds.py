@@ -91,42 +91,27 @@ def activity_watcher():
 
 
 def callback(outdata, frames, time_info, status):
-    global \
-        sound_alpha, \
-        target_alpha, \
-        prev, \
-        cpu_temp, \
-        key_rate, \
-        mouse_sensitivity, \
-        base_sound, \
-        level, \
-        gain, \
-        keyboard_sensitivity
+    global sound_alpha, prev, key_rate, mouse_rate, base_sound, level, gain
+    global mouse_sensitivity, keyboard_sensitivity, key_rate_affects, mouse_rate_affects
 
-    init_sounds_alpha = sound_alpha * 15
+    target_alpha = base_sound
 
     if key_rate_affects:
-        sound_alpha = (
-            (sound_alpha) + base_sound + ((key_rate + 0) / (800 / keyboard_sensitivity))
-        ) / 8
+        target_alpha += key_rate / (800 / keyboard_sensitivity)
 
     if mouse_rate_affects:
-        sound_alpha = (
-            (sound_alpha * 10)
-            + base_sound
-            + ((mouse_rate + 0) / (8000 / mouse_sensitivity))
-        ) / 8
+        target_alpha += mouse_rate / (8000 / mouse_sensitivity)
+
+    sound_alpha = 0.9 * sound_alpha + 0.1 * target_alpha
 
     noise = np.random.randn(frames, CHANNELS) * 0.2
     out = np.empty_like(noise)
 
     for i in range(frames):
-        prev += (init_sounds_alpha * 1 + sound_alpha / 5) * (noise[i] - prev)
-
+        prev += sound_alpha * (noise[i] - prev)
         out[i] = prev
 
     outdata[:] = out * gain
-
     level = float(np.sqrt(np.mean(out**2)))
 
 
@@ -142,15 +127,22 @@ def main():
     parser.add_argument("-k", "--keyboard-affects", required=False, action="store_true")
 
     parser.add_argument(
+        "-b",
+        "--base-volume",
+        help="0-200 is safe, only int numbers (1, not 1.5), 10 is recommended",
+        required=False,
+    )
+
+    parser.add_argument(
         "-ms",
         "--mouse-sensitivity",
-        help="0-100 is safe, only int numbers (1, not 1.5), 10 is recommended",
+        help="0-200 is safe, only int numbers (1, not 1.5), 10 is recommended",
         required=False,
     )
     parser.add_argument(
         "-ks",
         "--keyboard-sensitivity",
-        help="0-100 is safe, only int numbers (1, not 1.5), 10 is recommended",
+        help="0-200 is safe, only int numbers (1, not 1.5), 10 is recommended",
         required=False,
     )
 
@@ -178,15 +170,21 @@ def main():
         mouse_rate = 0.0
         key_rate = 0.0
         sound_alpha = 0
-        base_sound = 0.0025
-        mouse_sensitivity = 0.65
-        keyboard_sensitivity = 0.3
+        base_sound = 0.02
+        mouse_sensitivity = 3
+        keyboard_sensitivity = 3
 
         threading.Thread(target=activity_watcher, daemon=True).start()
 
         if not any(vars(args).values()):  # checks if any agrument got any value
             print("Missing arguments. Falllback to defaults.")
         else:
+            try:
+                if args.base_volume is not None:
+                    base_sound = int(args.base_volume) / 2000
+            except AttributeError:
+                pass
+                print("АААААААААААААААААА")
             try:
                 if args.mouse_sensitivity is not None:
                     mouse_sensitivity = int(args.mouse_sensitivity) / 20
@@ -220,11 +218,11 @@ def main():
                 sys.stdout.write(
                     " | "
                     + "Mouse activity: "
-                    + str(round(mouse_rate, 1))
+                    + str(round(mouse_rate / 14, 1))
                     + "    | \n"
                     + " | "
                     + "Keyboard activity: "
-                    + str(round(key_rate, 1))
+                    + str(round(key_rate / 7, 1))
                     + " | \n"
                     + " | "
                     + str(bar_return(level, 0.08, 20))
@@ -241,5 +239,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
