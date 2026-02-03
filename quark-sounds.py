@@ -24,17 +24,6 @@ def bar_return(reached, toreach, length):
     return bar
 
 
-def cpu_temp_watcher():
-    while True:
-        global cpu_temp
-        time.sleep(0.04)
-        out = subprocess.check_output(["sensors", "-j"])
-        data = json.loads(out)
-        for chip in data.values():
-            if "Tctl" in chip:
-                cpu_temp = float(chip["Tctl"]["temp1_input"])
-
-
 def activity_watcher():
     global mouse_rate, key_rate
 
@@ -108,25 +97,25 @@ def callback(outdata, frames, time_info, status):
         prev, \
         cpu_temp, \
         key_rate, \
-        sensitivity, \
+        mouse_sensitivity, \
         base_sound, \
         level, \
-        gain
+        gain, \
+        keyboard_sensitivity
 
     init_sounds_alpha = sound_alpha * 15
 
     if key_rate_affects:
         sound_alpha = (
-            (sound_alpha) + base_sound + ((key_rate + 0) / (800 / sensitivity))
+            (sound_alpha) + base_sound + ((key_rate + 0) / (800 / keyboard_sensitivity))
         ) / 8
 
     if mouse_rate_affects:
         sound_alpha = (
-            (sound_alpha * 10) + base_sound + ((mouse_rate + 0) / (8000 / sensitivity))
+            (sound_alpha * 10)
+            + base_sound
+            + ((mouse_rate + 0) / (8000 / mouse_sensitivity))
         ) / 8
-
-    if cpu_affects:
-        sound_alpha = sound_alpha + (cpu_temp + 1) / 20000
 
     noise = np.random.randn(frames, CHANNELS) * 0.2
     out = np.empty_like(noise)
@@ -148,109 +137,77 @@ def main():
         )
     )
 
+    parser.add_argument("-m", "--mouse-affects", required=False, action="store_true")
+
+    parser.add_argument("-k", "--keyboard-affects", required=False, action="store_true")
+
     parser.add_argument(
-        "-m",
-        "--mouse-affects",
+        "-ms",
+        "--mouse-sensitivity",
+        help="0-100 is safe, only int numbers (1, not 1.5), 10 is recommended",
+        required=False,
+    )
+    parser.add_argument(
+        "-ks",
+        "--keyboard-sensitivity",
+        help="0-100 is safe, only int numbers (1, not 1.5), 10 is recommended",
         required=False,
     )
 
-    parser.add_argument(
-        "-k",
-        "--keyboard-affects",
-        required=False,
-    )
-
-    parser.add_argument(
-        "-c",
-        "--cmd",
-        help="Command to execute when notify. ",
-    )
+    args = parser.parse_args()
 
     try:
-        global gain
-        gain = 1
-        global level
-        level = 0.01
-        global prev
+        global \
+            gain, \
+            level, \
+            prev, \
+            key_rate_affects, \
+            mouse_rate_affects, \
+            mouse_rate, \
+            key_rate, \
+            sound_alpha, \
+            base_sound, \
+            mouse_sensitivity, \
+            keyboard_sensitivity
+
         prev = np.zeros(CHANNELS)
-        global cpu_affects
-        cpu_affects = False
-        global cpu_temp
-        cpu_temp = 40.0
-        global key_rate_affects
+        gain = 1
+        level = 0.01
         key_rate_affects = True
-        global mouse_rate_affects
         mouse_rate_affects = True
-        global mouse_rate
         mouse_rate = 0.0
-        global key_rate
         key_rate = 0.0
-        global sound_alpha
         sound_alpha = 0
-
-        continue_program = input(
-            f"Disclaimer: This program is still in developement, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
-        )
-
-        if continue_program != "y":
-            print("\n\nExited quark-sounds.\n")
-            sys.exit(0)
-
-        global sensitivity
-        sensitivity = 6
-
-        try:
-            sensitivity_assing = int(
-                input(f"Sensitivity to user actions (0 - 100, 10 recommended): ")
-            )
-        except ValueError:
-            print("Wtire an int number please. (ex: 12, not 12.5)")
-            sys.exit(1)
-
-        if sensitivity_assing > 100 or sensitivity_assing < 0:
-            print("\n\nThis configuration is unsave.\n")
-            sys.exit(1)
-
-        sensitivity = sensitivity_assing / 20
-
-        global base_sound
-        base_sound = 6
-
-        try:
-            base_sound_assing = int(
-                input(f"Base sound loudness (0 - 100, 20 recommended): ")
-            )
-        except ValueError:
-            print("Wtire an int number please. (ex: 12, not 12.5)")
-            sys.exit(1)
-
-        if base_sound_assing > 100 or base_sound_assing < 0:
-            print("\n\nThis configuration is unsave.\n")
-            sys.exit(1)
-
-        base_sound = base_sound_assing / 20000
-
-        assing_mouse = input(f"Mouse will affect noise?[y/n]: ")
-
-        if assing_mouse == "y":
-            mouse_rate_affects = True
-        else:
-            mouse_rate_affects = False
-
-        assing_keyboard = input(f"Keyboard will affect noise?[y/n]: ")
-
-        if assing_keyboard == "y":
-            key_rate_affects = True
-        else:
-            key_rate_affects = False
+        base_sound = 0.0025
+        mouse_sensitivity = 0.65
+        keyboard_sensitivity = 0.3
 
         threading.Thread(target=activity_watcher, daemon=True).start()
 
-        # threading.Thread(target=keyboard_activity_watcher, daemon=True).start()
+        if not any(vars(args).values()):  # checks if any agrument got any value
+            print("Missing arguments. Falllback to defaults.")
+        else:
+            try:
+                if args.mouse_sensitivity is not None:
+                    mouse_sensitivity = int(args.mouse_sensitivity) / 20
+            except AttributeError:
+                pass
 
-        # threading.Thread(target=mouse_activity_watcher, daemon=True).start()
+            try:
+                if args.keyboard_sensitivity is not None:
+                    keyboard_sensitivity = int(args.keyboard_sensitivity) / 20
+            except AttributeError:
+                pass
 
-        # threading.Thread(target=cpu_temp_watcher, daemon=True).start()
+            if args.mouse_affects:
+                mouse_rate_affects = args.mouse_affects
+            else:
+                mouse_rate_affects = False
+
+            if args.keyboard_affects:
+                key_rate_affects = args.keyboard_affects
+            else:
+                key_rate_affects = False
 
         with sd.OutputStream(
             samplerate=SAMPLERATE,
@@ -259,51 +216,23 @@ def main():
             callback=callback,
         ):
             print("", end="\n\n")
-            compacted = False
             while True:
-                term_width = shutil.get_terminal_size().columns
-                if term_width < 80:
-                    if not compacted:
-                        sys.stdout.write("\033[2K\r")
-                    else:
-                        sys.stdout.write("\033[2K\033[A\033[2K\033[A\033[2K\r")
-
-                    compacted = True
-
-                    # sys.stdout.write("\033[2K\r")
-                    sys.stdout.write(
-                        " | "
-                        + "Mouse activity: "
-                        + str(round(mouse_rate, 1))
-                        + "    | \n"
-                        + " | "
-                        + "Keyboard activity: "
-                        + str(round(key_rate, 1))
-                        + " | \n"
-                        + " | "
-                        + str(bar_return(level, 0.08, 20))
-                        + " | "
-                    )
-                else:
-                    if compacted:
-                        compacted = False
-                        sys.stdout.write("\033[2K\033[A\033[2K\033[A\033[2K\r")
-                    else:
-                        sys.stdout.write("\033[2K\r")
-                    sys.stdout.write(
-                        " | "
-                        + "Mouse activity: "
-                        + str(round(mouse_rate, 1))
-                        + " | "
-                        + "Keyboard activity: "
-                        + str(round(key_rate, 1))
-                        + " | "
-                        + str(bar_return(level, 0.08, 20))
-                        + " | "
-                    )
-
+                sys.stdout.write(
+                    " | "
+                    + "Mouse activity: "
+                    + str(round(mouse_rate, 1))
+                    + "    | \n"
+                    + " | "
+                    + "Keyboard activity: "
+                    + str(round(key_rate, 1))
+                    + " | \n"
+                    + " | "
+                    + str(bar_return(level, 0.08, 20))
+                    + " | "
+                )
                 sys.stdout.flush()
                 time.sleep(0.1)
+                sys.stdout.write("\033[2K\033[A\033[2K\033[A\033[2K\r")
 
     except KeyboardInterrupt:
         print("\n\nExited quark-sounds.\n")
@@ -313,6 +242,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-if __name__ == "__main__":
-    main()
 
