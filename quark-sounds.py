@@ -184,7 +184,6 @@ def main():
                     base_sound = int(args.base_volume) / 2000
             except AttributeError:
                 pass
-                print("АААААААААААААААААА")
             try:
                 if args.mouse_sensitivity is not None:
                     mouse_sensitivity = int(args.mouse_sensitivity) / 20
