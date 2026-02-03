@@ -35,8 +35,8 @@ def cpu_temp_watcher():
                 cpu_temp = float(chip["Tctl"]["temp1_input"])
 
 
-def keyboard_activity_watcher():
-    global key_rate
+def activity_watcher():
+    global mouse_rate, key_rate
 
     proc = subprocess.Popen(
         ["libinput", "debug-events"],
@@ -47,95 +47,60 @@ def keyboard_activity_watcher():
     )
 
     key_events = []
-    smoothed_rate = 0
-    alpha = 0.01  # smoothing
+    mouse_events = []
+    smoothed_key_rate = 0  # <-- отдельно
+    smoothed_mouse_rate = 0  # <-- отдельно
+    alpha = 0.01
 
     window_size = 2.0
-    output_interval = 1.0 / 60.0
-
+    output_interval = 1.0 / 30.0
     last_output_update = time.time()
 
     while True:
         timeout = max(0.001, output_interval - (time.time() - last_output_update))
         ready, _, _ = select.select([proc.stdout], [], [], timeout)
+
         if ready:
             line = proc.stdout.readline()
             if not line:
                 break
-            if "KEYBOARD_KEY" in line:
+            elif any(
+                x in line
+                for x in ["POINTER_MOTION", "POINTER_SCROLL_WHEEL", "POINTER_BUTTON"]
+            ):
+                mouse_events.append(time.time())
+            elif "KEYBOARD_KEY" in line:
                 key_events.append(time.time())
 
         now = time.time()
 
         if now - last_output_update >= output_interval:
             cutoff_time = now - window_size
-            key_events = [t for t in key_events if t > cutoff_time]
-            if len(key_events) > 1:
-                if key_events:
-                    time_span = (
-                        now - key_events[0] if len(key_events) > 1 else window_size
-                    )
-                    instant_rate = len(key_events) / min(time_span, window_size)
-                else:
-                    instant_rate = 0
-            else:
-                instant_rate = 0
-            smoothed_rate = alpha * instant_rate + (1 - alpha) * smoothed_rate
-            key_rate = smoothed_rate
-            last_output_update = now
 
-
-def mouse_activity_watcher():
-    global mouse_rate
-
-    proc = subprocess.Popen(
-        ["libinput", "debug-events"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        text=True,
-        bufsize=1,
-    )
-
-    mouse_events = []
-    smoothed_rate = 0
-    alpha = 0.01  # smoothing
-
-    window_size = 2.0
-    output_interval = 1.0 / 60.0
-
-    last_output_update = time.time()
-
-    while True:
-        timeout = max(0.001, output_interval - (time.time() - last_output_update))
-        ready, _, _ = select.select([proc.stdout], [], [], timeout)
-        if ready:
-            line = proc.stdout.readline()
-            if not line:
-                break
-            elif (
-                "POINTER_MOTION" in line
-                or "POINTER_SCROLL_WHEEL" in line
-                or "POINTER_BUTTON" in line
-            ):
-                mouse_events.append(time.time())
-
-        now = time.time()
-
-        if now - last_output_update >= output_interval:
-            cutoff_time = now - window_size
+            # Обработка mouse
             mouse_events = [t for t in mouse_events if t > cutoff_time]
             if len(mouse_events) > 1:
-                if mouse_events:
-                    time_span = (
-                        now - mouse_events[0] if len(mouse_events) > 1 else window_size
-                    )
-                    instant_rate = len(mouse_events) / min(time_span, window_size)
-                else:
-                    instant_rate = 0
+                time_span = now - mouse_events[0]
+                instant_mouse = len(mouse_events) / min(time_span, window_size)
             else:
-                instant_rate = 0
-            smoothed_rate = alpha * instant_rate + (1 - alpha) * smoothed_rate
-            mouse_rate = smoothed_rate
+                instant_mouse = 0
+            smoothed_mouse_rate = (
+                alpha * instant_mouse + (1 - alpha) * smoothed_mouse_rate
+            )
+
+            # Обработка keyboard
+            key_events = [t for t in key_events if t > cutoff_time]
+            if len(key_events) > 1:
+                time_span = now - key_events[0]
+                instant_key = len(key_events) / min(time_span, window_size)
+            else:
+                instant_key = 0
+            smoothed_key_rate = alpha * instant_key + (1 - alpha) * smoothed_key_rate
+
+            # Присваиваем оба!
+            mouse_rate = smoothed_mouse_rate
+            key_rate = smoothed_key_rate
+
             last_output_update = now
 
 
@@ -155,12 +120,12 @@ def callback(outdata, frames, time_info, status):
 
     if key_rate_affects:
         sound_alpha = (
-            (sound_alpha) + base_sound + ((key_rate + 0) / (3000 / sensitivity))
+            (sound_alpha) + base_sound + ((key_rate + 0) / (800 / sensitivity))
         ) / 8
 
     if mouse_rate_affects:
         sound_alpha = (
-            (sound_alpha * 10) + base_sound + ((mouse_rate + 0) / (12000 / sensitivity))
+            (sound_alpha * 10) + base_sound + ((mouse_rate + 0) / (8000 / sensitivity))
         ) / 8
 
     if cpu_affects:
@@ -180,6 +145,30 @@ def callback(outdata, frames, time_info, status):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Quarks - simple cli white noise generatordepended on user actions. "
+        )
+    )
+
+    parser.add_argument(
+        "-m",
+        "--mouse-affects",
+        required=False,
+    )
+
+    parser.add_argument(
+        "-k",
+        "--keyboard-affects",
+        required=False,
+    )
+
+    parser.add_argument(
+        "-c",
+        "--cmd",
+        help="Command to execute when notify. ",
+    )
+
     try:
         global gain
         gain = 1
@@ -203,7 +192,7 @@ def main():
         sound_alpha = 0
 
         continue_program = input(
-            f"Disclaimer: This program is still in development, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
+            f"Disclaimer: This program is still in developement, theoretically, if something is wrong with libinput, it can show unexpected behavior. Sure want to continue?[y/n]: "
         )
 
         if continue_program != "y":
@@ -258,9 +247,11 @@ def main():
         else:
             key_rate_affects = False
 
-        threading.Thread(target=keyboard_activity_watcher, daemon=True).start()
+        threading.Thread(target=activity_watcher, daemon=True).start()
 
-        threading.Thread(target=mouse_activity_watcher, daemon=True).start()
+        # threading.Thread(target=keyboard_activity_watcher, daemon=True).start()
+
+        # threading.Thread(target=mouse_activity_watcher, daemon=True).start()
 
         # threading.Thread(target=cpu_temp_watcher, daemon=True).start()
 
