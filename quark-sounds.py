@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-
 import argparse
 import json
 import readline
 import select
+import shutil
 import subprocess
 import sys
 import threading
@@ -48,8 +48,8 @@ def activity_watcher():
 
     key_events = []
     mouse_events = []
-    smoothed_key_rate = 0  # <-- отдельно
-    smoothed_mouse_rate = 0  # <-- отдельно
+    smoothed_key_rate = 0
+    smoothed_mouse_rate = 0
     alpha = 0.01
 
     window_size = 2.0
@@ -77,7 +77,6 @@ def activity_watcher():
         if now - last_output_update >= output_interval:
             cutoff_time = now - window_size
 
-            # Обработка mouse
             mouse_events = [t for t in mouse_events if t > cutoff_time]
             if len(mouse_events) > 1:
                 time_span = now - mouse_events[0]
@@ -88,7 +87,6 @@ def activity_watcher():
                 alpha * instant_mouse + (1 - alpha) * smoothed_mouse_rate
             )
 
-            # Обработка keyboard
             key_events = [t for t in key_events if t > cutoff_time]
             if len(key_events) > 1:
                 time_span = now - key_events[0]
@@ -97,7 +95,6 @@ def activity_watcher():
                 instant_key = 0
             smoothed_key_rate = alpha * instant_key + (1 - alpha) * smoothed_key_rate
 
-            # Присваиваем оба!
             mouse_rate = smoothed_mouse_rate
             key_rate = smoothed_key_rate
 
@@ -147,7 +144,7 @@ def callback(outdata, frames, time_info, status):
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Quarks - simple cli white noise generatordepended on user actions. "
+            "Quarks - simple cli white noise generator depended on user actions. "
         )
     )
 
@@ -262,19 +259,48 @@ def main():
             callback=callback,
         ):
             print("", end="\n\n")
+            compacted = False
             while True:
-                sys.stdout.write("\033[2K\r")
-                sys.stdout.write(
-                    " | "
-                    + "Mouse activity: "
-                    + str(round(mouse_rate, 1))
-                    + " | "
-                    + "Keyboard activity: "
-                    + str(round(key_rate, 1))
-                    + " | "
-                    + str(bar_return(level, 0.08, 20))
-                    + " | "
-                )
+                term_width = shutil.get_terminal_size().columns
+                if term_width < 80:
+                    if not compacted:
+                        sys.stdout.write("\033[2K\r")
+                    else:
+                        sys.stdout.write("\033[2K\033[A\033[2K\033[A\033[2K\r")
+
+                    compacted = True
+
+                    # sys.stdout.write("\033[2K\r")
+                    sys.stdout.write(
+                        " | "
+                        + "Mouse activity: "
+                        + str(round(mouse_rate, 1))
+                        + "    | \n"
+                        + " | "
+                        + "Keyboard activity: "
+                        + str(round(key_rate, 1))
+                        + " | \n"
+                        + " | "
+                        + str(bar_return(level, 0.08, 20))
+                        + " | "
+                    )
+                else:
+                    if compacted:
+                        compacted = False
+                        sys.stdout.write("\033[2K\033[A\033[2K\033[A\033[2K\r")
+                    else:
+                        sys.stdout.write("\033[2K\r")
+                    sys.stdout.write(
+                        " | "
+                        + "Mouse activity: "
+                        + str(round(mouse_rate, 1))
+                        + " | "
+                        + "Keyboard activity: "
+                        + str(round(key_rate, 1))
+                        + " | "
+                        + str(bar_return(level, 0.08, 20))
+                        + " | "
+                    )
 
                 sys.stdout.flush()
                 time.sleep(0.1)
@@ -283,6 +309,9 @@ def main():
         print("\n\nExited quark-sounds.\n")
         sys.exit(0)
 
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
