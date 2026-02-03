@@ -50,5 +50,9 @@ rm -rf ~/.local/share/quarks ~/.local/bin/quarks
 ```bash
 quarks
 ```
+## Advanced usage
+```bash
+quarks -m -k -ms 10 -ks 10 # mouse affects, keyboard affects, mouse sensitivity 10, keyboard sensitivity 10
+```
 
 <!-- <p> No one will read this line >:3 </p> -->
