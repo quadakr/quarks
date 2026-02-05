@@ -22,7 +22,7 @@ In development. Behavior may change.
 - Linux with libinput
 - Python 3
 - User must be in `input` group (`sudo usermod -a -G input $USER`)
-- Python packages: numpy, sounddevice
+- Python packages: numpy, sounddevice (automatically installing with install.sh)
 
 ---
 
