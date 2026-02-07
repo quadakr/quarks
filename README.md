@@ -52,7 +52,7 @@ quarks
 ```
 ## Advanced usage
 ```bash
-quarks -b 40 -m -k -ms 50 -ks 50 # base sound volume 40, mouse affects, keyboard affects, mouse sensitivity 50, keyboard sensitivity 50
+quarks -b 40 -m -k -ms 50 -ks 50 -d 0 # base sound volume 40, mouse affects, keyboard affects, mouse sensitivity 50, keyboard sensitivity 50, device-id: 0
 ```
 
 <!-- <p> No one will read this line >:3 </p> -->
