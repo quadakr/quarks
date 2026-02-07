@@ -21,6 +21,7 @@ In development. Behavior may change.
 ## Requirements
 - Linux with libinput
 - Python 3
+- PortAudio (Debian/Ubuntu: `sudo apt install libportaudio2`)
 - User must be in `input` group (`sudo usermod -a -G input $USER`)
 - Python packages: numpy, sounddevice (automatically installing with install.sh)
 
