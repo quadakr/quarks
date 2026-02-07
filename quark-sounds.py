@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import json
 import readline
 import select
-import shutil
 import subprocess
 import sys
 import threading
@@ -129,20 +127,26 @@ def main():
     parser.add_argument(
         "-b",
         "--base-volume",
-        help="0-200 is safe, only int numbers (1, not 1.5), 10 is recommended",
+        help="0-200 is safe, only int numbers (1, not 1.5), 40 is recommended",
         required=False,
     )
 
     parser.add_argument(
         "-ms",
         "--mouse-sensitivity",
-        help="0-200 is safe, only int numbers (1, not 1.5), 10 is recommended",
+        help="0-200 is safe, only int numbers (1, not 1.5), 60 is recommended",
         required=False,
     )
     parser.add_argument(
         "-ks",
         "--keyboard-sensitivity",
-        help="0-200 is safe, only int numbers (1, not 1.5), 10 is recommended",
+        help="0-200 is safe, only int numbers (1, not 1.5), 60 is recommended",
+        required=False,
+    )
+    parser.add_argument(
+        "-d",
+        "--device",
+        help="Device id to play a sound on. Usually 0 or 1, run quarks without arguments to see.",
         required=False,
     )
 
@@ -206,13 +210,31 @@ def main():
             else:
                 key_rate_affects = False
 
+        device = 0
+
+        if args.device:
+            device = int(args.device)
+
         with sd.OutputStream(
             samplerate=SAMPLERATE,
             blocksize=BLOCKSIZE,
             channels=CHANNELS,
             callback=callback,
+            device=device,
         ):
+            print("", end="\n")
+
+            print(
+                "Current playback device: "
+                + str(device)
+                + ". To change run quarks -d <device-id>"
+            )
+
+            print("Sound Devices list:")
+            print(sd.query_devices())
+
             print("", end="\n\n")
+
             while True:
                 sys.stdout.write(
                     " | "
@@ -238,6 +260,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
