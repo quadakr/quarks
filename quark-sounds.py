@@ -116,7 +116,7 @@ def callback(outdata, frames, time_info, status):
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Quarks - simple cli white noise generator depended on user actions. "
+            "Quarks - simple cli white noise generator depended on user actions. Created by quadakr."
         )
     )
 
@@ -149,10 +149,23 @@ def main():
         help="Device id to play a sound on. Usually 0 or 1, run quarks without arguments to see.",
         required=False,
     )
+    parser.add_argument(
+        "-v",
+        "--version",
+        help="Show program version and author, then exit.",  # See 164 line
+        required=False,
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
     try:
+        program_version = "v0.2.0"
+        if args.version:
+            print(
+                f"\nQuark-Sounds {program_version} by quadakr (github.com/quadakr)\n"
+            )  # According to MIT license, this copyright notice must be included in all distributions of the program
+            sys.exit(0)
         global \
             gain, \
             level, \
@@ -213,45 +226,52 @@ def main():
         device = 0
 
         if args.device:
-            device = int(args.device)
+            try:
+                device = int(args.device)
+            except:
+                print("Error selecting this device: " + str(device) + ".")
+                sys.exit(1)
+        try:
+            with sd.OutputStream(
+                samplerate=SAMPLERATE,
+                blocksize=BLOCKSIZE,
+                channels=CHANNELS,
+                callback=callback,
+                device=device,
+            ):
+                print("", end="\n")
 
-        with sd.OutputStream(
-            samplerate=SAMPLERATE,
-            blocksize=BLOCKSIZE,
-            channels=CHANNELS,
-            callback=callback,
-            device=device,
-        ):
-            print("", end="\n")
-
-            print(
-                "Current playback device: "
-                + str(device)
-                + ". To change run quarks -d <device-id>"
-            )
-
-            print("Sound Devices list:")
-            print(sd.query_devices())
-
-            print("", end="\n\n")
-
-            while True:
-                sys.stdout.write(
-                    " | "
-                    + "Mouse activity: "
-                    + str(round(mouse_rate / 14, 1))
-                    + "    | \n"
-                    + " | "
-                    + "Keyboard activity: "
-                    + str(round(key_rate / 7, 1))
-                    + " | \n"
-                    + " | "
-                    + str(bar_return(level, 0.08, 20))
-                    + " | "
+                print(
+                    "Current playback device: "
+                    + str(device)
+                    + ". To change run quarks -d <device-id>"
                 )
-                sys.stdout.flush()
-                time.sleep(0.1)
-                sys.stdout.write("\033[2K\033[A\033[2K\033[A\033[2K\r")
+
+                print("Sound Devices list:")
+                print(sd.query_devices())
+
+                print("", end="\n\n")
+
+                while True:
+                    sys.stdout.write(
+                        " | "
+                        + "Mouse activity: "
+                        + str(round(mouse_rate / 14, 1))
+                        + "    | \n"
+                        + " | "
+                        + "Keyboard activity: "
+                        + str(round(key_rate / 7, 1))
+                        + " | \n"
+                        + " | "
+                        + str(bar_return(level, 0.08, 20))
+                        + " | "
+                    )
+                    sys.stdout.flush()
+                    time.sleep(0.1)
+                    sys.stdout.write("\033[2K\033[A\033[2K\033[A\033[2K\r")
+        except:
+            print("Error selecting this device: " + str(device) + ".")
+            sys.exit(1)
 
     except KeyboardInterrupt:
         print("\n\nExited quark-sounds.\n")
@@ -260,5 +280,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
