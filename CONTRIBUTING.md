@@ -24,7 +24,7 @@ So you can launch the quark-sounds.py directly from source code.
 
 1. Fork the repo ("Fork" button on the top right)
 2. Create a new branch for your forked repo, naming it with readable/understandable name
-3. Commit all your changes, optionally explaining changes
+3. Commit all your code, optionally explaining changes
 4. Go to https://github.com/quadakr/quarks/pulls, and click "New pull request"
 5. Select your branch, describe what you changed, and submit request
 
