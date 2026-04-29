@@ -1,3 +1,5 @@
+## Caution: Strictly prohibited for use in California.
+
 # quarks
 
 Simple **Linux Only** CLI tool for real-time adaptive [white] noise generation.
